@@ -2,10 +2,11 @@
 
 A standalone Lidarr plugin for managing local playlists and importing from Spotify.
 
-## Features (planned)
+## Features
 
-- **Local playlist builder**: Create and manage playlists from your Lidarr library; export to M3U/XSPF.
-- **Spotify import**: Import a Spotify playlist and match tracks to your library; create a local playlist from matches.
+- **Local playlist builder**: Create and manage playlists from your Lidarr library; persist in a plugin-owned SQLite DB; export to M3U/XSPF.
+- **Import from track list**: POST a list of `{ artist, title }` (e.g. from Spotify); match to Lidarr library (exact + fuzzy); create a playlist and report unmatched tracks.
+- **REST API**: CRUD for playlists and tracks; export endpoints; import endpoint. *Requires* Lidarr to register the plugin assembly (see below).
 
 ## Requirements
 
@@ -43,6 +44,33 @@ Push a version tag (e.g. `v1.0.0`) to trigger the GitHub Actions workflow:
 3. **Publish** – creates a GitHub Release for the tag and attaches the zip (e.g. `PlaylistManager-v1.0.0.net8.0.zip`).
 
 Same pattern as [Tubifarry](https://github.com/TypNull/Tubifarry): tag `v*` → build → package → release.
+
+## Tests
+
+```bash
+dotnet test PlaylistManager.sln -c Release
+```
+
+## REST API (plugin assembly registration)
+
+Lidarr does not load plugin assemblies as MVC application parts, so by default the PlaylistManager API routes are **not** registered. To enable them you must patch Lidarr’s startup so the plugin assembly is added as an application part.
+
+In `NzbDrone.Host/Startup.cs`, in the `AddControllers()` chain (around the existing `.AddApplicationPart(...)` calls), add:
+
+```csharp
+.AddApplicationPart(typeof(PlaylistManager.PlaylistManager).Assembly)
+```
+
+Then rebuild Lidarr. After that, the following base path will be available (when the plugin is installed):
+
+- `GET/POST /api/v1/playlist` – list / create playlists  
+- `GET/PUT/DELETE /api/v1/playlist/{id}` – get / update / delete  
+- `GET/PUT /api/v1/playlist/{id}/tracks` – list / set tracks  
+- `POST /api/v1/playlist/{id}/tracks` – add track (body: `{ "trackId": 123 }`)  
+- `DELETE /api/v1/playlist/{id}/tracks/{trackId}` – remove track  
+- `GET /api/v1/playlist/{id}/export/m3u` – export as M3U  
+- `GET /api/v1/playlist/{id}/export/xspf` – export as XSPF  
+- `POST /api/v1/playlist/import` – import from track list (body: `{ "playlistName": "...", "tracks": [ { "artist": "...", "title": "..." } ] }`)
 
 ## License
 
