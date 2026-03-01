@@ -1,0 +1,21 @@
+# Build outputs
+_plugins/
+_temp/
+_tests/
+_output/
+
+# IDE / OS
+.vs/
+*.user
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Build logs
+*.binlog
+*.log
