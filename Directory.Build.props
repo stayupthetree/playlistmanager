@@ -1,0 +1,30 @@
+<Project>
+	<PropertyGroup>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+		<LidarrRootDir>$(MSBuildThisFileDirectory)</LidarrRootDir>
+		<LidarrOutputType>Library</LidarrOutputType>
+		<LidarrProject>false</LidarrProject>
+		<PluginProject>true</PluginProject>
+	</PropertyGroup>
+	<PropertyGroup>
+		<Configuration Condition="'$(Configuration)'==''">Release</Configuration>
+		<BaseIntermediateOutputPath>$(LidarrRootDir)_temp\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+		<IntermediateOutputPath>$(LidarrRootDir)_temp\obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
+		<OutputPath>$(LidarrRootDir)_temp\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>
+		<OutputPath Condition="'$(PluginProject)'=='true'">$(LidarrRootDir)_plugins\$(TargetFramework)\$(MSBuildProjectName)</OutputPath>
+		<BaseIntermediateOutputPath>$([MSBuild]::MakeRelative('$(MSBuildProjectDirectory)', '$(BaseIntermediateOutputPath)'))</BaseIntermediateOutputPath>
+		<IntermediateOutputPath>$([MSBuild]::MakeRelative('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)'))</IntermediateOutputPath>
+		<OutputPath>$([MSBuild]::MakeRelative('$(MSBuildProjectDirectory)', '$(OutputPath)'))</OutputPath>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+	<PropertyGroup>
+		<AppendTargetFrameworkToOutputPath Condition="'$(PluginProject)'=='true'">false</AppendTargetFrameworkToOutputPath>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+</Project>

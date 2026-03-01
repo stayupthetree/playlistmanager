@@ -1,0 +1,34 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.1.11312.151
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlaylistManager", "PlaylistManager\PlaylistManager.csproj", "{B2C4D6E8-F0A2-4B1C-8D3E-5F6A7B8C9D0E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lidarr.Core", "Submodules\Lidarr\src\NzbDrone.Core\Lidarr.Core.csproj", "{91CB11D7-4E7A-4B1A-AE6A-15E1F075C27A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lidarr.Common", "Submodules\Lidarr\src\NzbDrone.Common\Lidarr.Common.csproj", "{E1E12DF8-D168-4259-96C9-B7A6EE58A4AF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B2C4D6E8-F0A2-4B1C-8D3E-5F6A7B8C9D0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C4D6E8-F0A2-4B1C-8D3E-5F6A7B8C9D0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C4D6E8-F0A2-4B1C-8D3E-5F6A7B8C9D0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C4D6E8-F0A2-4B1C-8D3E-5F6A7B8C9D0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91CB11D7-4E7A-4B1A-AE6A-15E1F075C27A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91CB11D7-4E7A-4B1A-AE6A-15E1F075C27A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91CB11D7-4E7A-4B1A-AE6A-15E1F075C27A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91CB11D7-4E7A-4B1A-AE6A-15E1F075C27A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1E12DF8-D168-4259-96C9-B7A6EE58A4AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1E12DF8-D168-4259-96C9-B7A6EE58A4AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1E12DF8-D168-4259-96C9-B7A6EE58A4AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1E12DF8-D168-4259-96C9-B7A6EE58A4AF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A1B2C3D4-E5F6-4A5B-8C9D-0E1F2A3B4C5D}
+	EndGlobalSection
+EndGlobal

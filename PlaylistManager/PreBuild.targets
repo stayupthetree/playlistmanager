@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<PropertyGroup>
+		<SubmoduleDir>$(MSBuildProjectDirectory)\..\Submodules\Lidarr</SubmoduleDir>
+		<SubmoduleMarker>$(SubmoduleDir)\src\NzbDrone.Core\Lidarr.Core.csproj</SubmoduleMarker>
+	</PropertyGroup>
+	<Target Name="InitializeSubmodules" BeforeTargets="LidarrFrontendBuild;BeforeBuild" Condition="'$(CI)' != 'true'">
+		<Message Importance="High" Text="Checking Lidarr submodule..." Condition="!Exists('$(SubmoduleMarker)')" />
+		<Error Text="Lidarr submodule not found. From repo root run: git submodule update --init --recursive" Condition="!Exists('$(SubmoduleMarker)')" />
+	</Target>
+	<Target Name="LidarrFrontendBuild" BeforeTargets="BeforeBuild" DependsOnTargets="InitializeSubmodules" Condition="'$(CI)' != 'true'">
+		<Message Importance="High" Text="Using Lidarr from parent repo (no frontend build)." Condition="Exists('$(SubmoduleDir)\_output\UI\')" />
+	</Target>
+</Project>
