@@ -40,6 +40,10 @@ on:
         required: true
         type: string
         description: "Git branch name for target_commitish"
+      release_tag:
+        required: true
+        type: string
+        description: "Tag name for the release (e.g. v1.0.0). Use github.ref_name for tag push, or v{version} for manual run."
     outputs:
       release_url:
         description: "URL of the created release"
@@ -95,7 +99,7 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
+          tag_name: ${{ inputs.release_tag }}
           name: "🚀 Release ${{ inputs.package_version }}"
           body_path: ${{ steps.verify_artifacts.outputs.release_notes_path }}
           prerelease: ${{ inputs.is_prerelease == 'true' }}

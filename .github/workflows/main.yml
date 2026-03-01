@@ -97,5 +97,6 @@ jobs:
       git_commit: ${{ needs.git-info.outputs.git_commit }}
       branch_repo_url: ${{ needs.git-info.outputs.branch_repo_url }}
       git_branch: ${{ needs.git-info.outputs.git_branch }}
+      release_tag: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', needs.metadata.outputs.package_version) || github.ref_name }}
     needs: [metadata, git-info, compilation, packaging, release-notes]
-    if: needs.compilation.outputs.build_status == 'success' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    if: needs.compilation.outputs.build_status == 'success'
