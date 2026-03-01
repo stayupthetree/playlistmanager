@@ -8,6 +8,11 @@ on:
         type: string
         description: "Override the plugin name if different from repository name"
         default: ""
+      package_version_override:
+        required: false
+        type: string
+        description: "Override version (for workflow_dispatch manual runs). Empty = extract from tag."
+        default: ""
     outputs:
       plugin_name:
         description: "The name of the plugin"
@@ -113,17 +118,22 @@ jobs:
           echo "Using framework: $FRAMEWORK"
           echo "framework=$FRAMEWORK" >> $GITHUB_OUTPUT
 
-      - name: Extract version from tag
+      - name: Extract version from tag or override
         id: extract_version
         run: |
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
-          # Remove branch suffix if present
-          if [[ "$TAG_VERSION" == *-* ]]; then
-            VERSION_ONLY=${TAG_VERSION%%-*}
-            echo "Extracted version without branch suffix: $VERSION_ONLY"
-            TAG_VERSION=$VERSION_ONLY
+          if [ -n "${{ inputs.package_version_override }}" ]; then
+            TAG_VERSION="${{ inputs.package_version_override }}"
+            echo "Using version override: $TAG_VERSION"
+          else
+            TAG_VERSION=${GITHUB_REF#refs/tags/v}
+            # Remove branch suffix if present
+            if [[ "$TAG_VERSION" == *-* ]]; then
+              VERSION_ONLY=${TAG_VERSION%%-*}
+              echo "Extracted version without branch suffix: $VERSION_ONLY"
+              TAG_VERSION=$VERSION_ONLY
+            fi
+            echo "Extracted version from tag: $TAG_VERSION"
           fi
-          echo "Extracted version: $TAG_VERSION"
           echo "package_version=$TAG_VERSION" >> $GITHUB_OUTPUT
           if [[ "$TAG_VERSION" == 0.* ]]; then
             echo "is_prerelease=true" >> $GITHUB_OUTPUT
@@ -149,17 +159,17 @@ jobs:
         run: |
           if [ -f "Submodules/Lidarr/azure-pipelines.yml" ]; then
             RAW_YAML=$(cat Submodules/Lidarr/azure-pipelines.yml)
+            MAJOR_VERSION=$(echo "$RAW_YAML" | grep "majorVersion:" | head -n 1 | sed "s/.*majorVersion: *'\([^']*\)'.*/\1/")
+            echo "Extracted majorVersion: $MAJOR_VERSION"
+            DOT_COUNT=$(echo "$MAJOR_VERSION" | awk -F. '{print NF-1}')
+            if [ "$DOT_COUNT" -eq 2 ]; then
+              MINIMUM_LIDARR_VERSION="${MAJOR_VERSION}.0"
+            else
+              MINIMUM_LIDARR_VERSION="$MAJOR_VERSION"
+            fi
+            echo "Minimum Lidarr Version from submodule: $MINIMUM_LIDARR_VERSION"
           else
-            echo "Error: Submodules/Lidarr/azure-pipelines.yml not found!"
-            exit 1
+            MINIMUM_LIDARR_VERSION="0.4.0"
+            echo "Submodules/Lidarr/azure-pipelines.yml not found (submodule may not be checked out); using default: $MINIMUM_LIDARR_VERSION"
           fi
-          MAJOR_VERSION=$(echo "$RAW_YAML" | grep "majorVersion:" | head -n 1 | sed "s/.*majorVersion: *'\([^']*\)'.*/\1/")
-          echo "Extracted majorVersion: $MAJOR_VERSION"
-          DOT_COUNT=$(echo "$MAJOR_VERSION" | awk -F. '{print NF-1}')
-          if [ "$DOT_COUNT" -eq 2 ]; then
-            MINIMUM_LIDARR_VERSION="${MAJOR_VERSION}.0"
-          else
-            MINIMUM_LIDARR_VERSION="$MAJOR_VERSION"
-          fi
-          echo "Minimum Lidarr Version: $MINIMUM_LIDARR_VERSION"
           echo "minimum_lidarr_version=$MINIMUM_LIDARR_VERSION" >> $GITHUB_OUTPUT
