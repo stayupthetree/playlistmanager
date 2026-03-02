@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Text;
 using Lidarr.Http;
 using Lidarr.Http.REST;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +18,22 @@ namespace PlaylistManager.Api
         {
             _playlistService = playlistService;
             _trackMatcher = trackMatcher;
+        }
+
+        [HttpGet("ui")]
+        public IActionResult GetUi()
+        {
+            var asm = typeof(PlaylistController).Assembly;
+            var name = "PlaylistManager.Ui.html";
+            using var stream = asm.GetManifestResourceStream(name);
+            if (stream == null)
+            {
+                return NotFound();
+            }
+
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            var html = reader.ReadToEnd();
+            return Content(html, "text/html", Encoding.UTF8);
         }
 
         [HttpGet]
@@ -93,6 +111,17 @@ namespace PlaylistManager.Api
             }
 
             return Ok(_playlistService.GetPlaylistTracks(id));
+        }
+
+        [HttpGet("{id:int}/tracks/details")]
+        public ActionResult<IReadOnlyList<PlaylistTrackDetail>> GetTracksWithDetails(int id)
+        {
+            if (_playlistService.GetPlaylist(id) == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(_playlistService.GetPlaylistTracksWithDetails(id));
         }
 
         [HttpPut("{id:int}/tracks")]

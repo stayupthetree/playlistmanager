@@ -13,6 +13,7 @@ namespace PlaylistManager.Services
         void DeletePlaylist(int id);
 
         IReadOnlyList<PlaylistTrack> GetPlaylistTracks(int playlistId);
+        IReadOnlyList<PlaylistTrackDetail> GetPlaylistTracksWithDetails(int playlistId);
         void SetPlaylistTracks(int playlistId, IReadOnlyList<int> trackIds);
         void AddTrackToPlaylist(int playlistId, int trackId);
         void RemoveTrackFromPlaylist(int playlistId, int trackId);

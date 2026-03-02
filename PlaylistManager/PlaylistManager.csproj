@@ -23,6 +23,9 @@
 	<ItemGroup>
 		<AdditionalFiles Remove="..\stylecop.json" />
 	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Content\PlaylistManagerUi.html" LogicalName="PlaylistManager.Ui.html" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Submodules\Lidarr\src\NzbDrone.Common\Lidarr.Common.csproj" />

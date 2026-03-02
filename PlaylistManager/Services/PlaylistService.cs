@@ -32,6 +32,34 @@ namespace PlaylistManager.Services
         public void DeletePlaylist(int id) => _repository.Delete(id);
 
         public IReadOnlyList<PlaylistTrack> GetPlaylistTracks(int playlistId) => _repository.GetTracks(playlistId);
+
+        public IReadOnlyList<PlaylistTrackDetail> GetPlaylistTracksWithDetails(int playlistId)
+        {
+            var pts = _repository.GetTracks(playlistId);
+            if (pts.Count == 0)
+            {
+                return Array.Empty<PlaylistTrackDetail>();
+            }
+
+            var trackIds = pts.Select(x => x.TrackId).Distinct().ToList();
+            var tracks = _trackService.GetTracks(trackIds);
+            var trackMap = tracks.ToDictionary(t => t.Id, t => t);
+            var result = new List<PlaylistTrackDetail>();
+
+            foreach (var pt in pts.OrderBy(x => x.Position))
+            {
+                if (!trackMap.TryGetValue(pt.TrackId, out var track) || track == null)
+                {
+                    result.Add(new PlaylistTrackDetail { TrackId = pt.TrackId, Position = pt.Position, Title = "?", ArtistName = "—" });
+                    continue;
+                }
+
+                var title = track.Title?.Trim() ?? "—";
+                result.Add(new PlaylistTrackDetail { TrackId = pt.TrackId, Position = pt.Position, Title = title, ArtistName = "—" });
+            }
+
+            return result;
+        }
         public void SetPlaylistTracks(int playlistId, IReadOnlyList<int> trackIds) => _repository.SetTracks(playlistId, trackIds);
         public void AddTrackToPlaylist(int playlistId, int trackId) => _repository.AddTrack(playlistId, trackId);
         public void RemoveTrackFromPlaylist(int playlistId, int trackId) => _repository.RemoveTrack(playlistId, trackId);

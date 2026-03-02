@@ -6,6 +6,7 @@ A standalone Lidarr plugin for managing local playlists and importing from Spoti
 
 - **Local playlist builder**: Create and manage playlists from your Lidarr library; persist in a plugin-owned SQLite DB; export to M3U/XSPF.
 - **Import from track list**: POST a list of `{ artist, title }` (e.g. from Spotify); match to Lidarr library (exact + fuzzy); create a playlist and report unmatched tracks.
+- **Web GUI**: Manage playlists in your browser (create, open, delete, import from list, export M3U/XSPF). Open `/api/v1/playlist/ui` when the API is enabled.
 - **REST API**: CRUD for playlists and tracks; export endpoints; import endpoint. *Requires* Lidarr to register the plugin assembly (see below).
 
 ## Requirements
@@ -51,6 +52,14 @@ Same pattern as [Tubifarry](https://github.com/TypNull/Tubifarry): tag `v*` → 
 dotnet test PlaylistManager.sln -c Release
 ```
 
+## Using the GUI
+
+Once the plugin is installed and the API is enabled (see below), open the **PlaylistManager** web UI at:
+
+- **URL:** `http://<your-lidarr-host>:<port>/api/v1/playlist/ui` (e.g. `http://localhost:8686/api/v1/playlist/ui`)
+
+From the GUI you can create/delete playlists, view and remove tracks, **Import from list** (paste "Artist - Title" lines or JSON), and **Export** as M3U or XSPF. Use the same host/port and auth as Lidarr.
+
 ## REST API (plugin assembly registration)
 
 Lidarr does not load plugin assemblies as MVC application parts, so by default the PlaylistManager API routes are **not** registered. To enable them you must patch Lidarr’s startup so the plugin assembly is added as an application part.
@@ -63,8 +72,10 @@ In `NzbDrone.Host/Startup.cs`, in the `AddControllers()` chain (around the exist
 
 Then rebuild Lidarr. After that, the following base path will be available (when the plugin is installed):
 
+- `GET /api/v1/playlist/ui` – **web UI** (open in browser)  
 - `GET/POST /api/v1/playlist` – list / create playlists  
 - `GET/PUT/DELETE /api/v1/playlist/{id}` – get / update / delete  
+- `GET /api/v1/playlist/{id}/tracks/details` – list tracks with title (for UI)  
 - `GET/PUT /api/v1/playlist/{id}/tracks` – list / set tracks  
 - `POST /api/v1/playlist/{id}/tracks` – add track (body: `{ "trackId": 123 }`)  
 - `DELETE /api/v1/playlist/{id}/tracks/{trackId}` – remove track  

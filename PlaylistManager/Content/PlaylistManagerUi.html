@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PlaylistManager</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 1rem; background: #1a1a2e; color: #eee; min-height: 100vh; }
+    h1 { margin: 0 0 1rem; font-size: 1.5rem; }
+    a { color: #7eb8da; }
+    .toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+    button, input[type="text"], textarea { padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid #444; background: #2d2d44; color: #eee; }
+    button { cursor: pointer; }
+    button:hover { background: #3d3d5c; }
+    button.danger { background: #5c2d2d; }
+    button.danger:hover { background: #7c3d3d; }
+    .card { background: #252538; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    .playlists { display: grid; gap: 0.5rem; }
+    .playlist-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; background: #1e1e32; border-radius: 4px; }
+    .playlist-row:hover { background: #28283d; }
+    .playlist-name { font-weight: 600; }
+    .tracks { list-style: none; padding: 0; margin: 0; }
+    .tracks li { display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0; border-bottom: 1px solid #333; }
+    .tracks li:last-child { border-bottom: none; }
+    .track-info { color: #aaa; font-size: 0.9rem; }
+    .error { color: #e88; margin: 0.5rem 0; }
+    .success { color: #8e8; margin: 0.5rem 0; }
+    textarea { width: 100%; min-height: 120px; resize: vertical; font-family: inherit; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10; }
+    .modal-inner { background: #252538; padding: 1.5rem; border-radius: 8px; max-width: 90vw; max-height: 90vh; overflow: auto; }
+    .modal h2 { margin-top: 0; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>PlaylistManager</h1>
+  <div class="toolbar">
+    <button type="button" id="btnNew">New playlist</button>
+    <button type="button" id="btnImport">Import from list</button>
+  </div>
+  <div id="error" class="error hidden"></div>
+  <div id="success" class="success hidden"></div>
+  <div id="list" class="card"><div class="playlists" id="playlists"></div></div>
+  <div id="detail" class="card hidden">
+    <div class="toolbar" style="margin-bottom:0.5rem;">
+      <span id="detailTitle" class="playlist-name"></span>
+      <button type="button" id="btnExportM3u">Export M3U</button>
+      <button type="button" id="btnExportXspf">Export XSPF</button>
+      <button type="button" id="btnBack">← Back</button>
+    </div>
+    <ul class="tracks" id="tracks"></ul>
+  </div>
+
+  <div id="modalNew" class="modal hidden">
+    <div class="modal-inner">
+      <h2>New playlist</h2>
+      <p><label>Name <input type="text" id="newName" placeholder="Playlist name" /></label></p>
+      <p><label>Description <input type="text" id="newDesc" placeholder="Optional" /></label></p>
+      <button type="button" id="btnCreate">Create</button>
+      <button type="button" id="btnCancelNew">Cancel</button>
+    </div>
+  </div>
+  <div id="modalImport" class="modal hidden">
+    <div class="modal-inner">
+      <h2>Import from track list</h2>
+      <p>Paste one track per line as <code>Artist - Title</code> or JSON: <code>[{"artist":"...","title":"..."}]</code></p>
+      <textarea id="importText" placeholder="Artist - Title&#10;Or JSON array"></textarea>
+      <p><label>Playlist name <input type="text" id="importName" value="Imported Playlist" /></label></p>
+      <button type="button" id="btnDoImport">Import</button>
+      <button type="button" id="btnCancelImport">Cancel</button>
+      <div id="importResult" class="hidden"></div>
+    </div>
+  </div>
+
+  <script>
+    const base = (() => { const p = document.location.pathname; const i = p.indexOf('/ui'); return i >= 0 ? p.slice(0, i) : '/api/v1/playlist'; })();
+    function api(path, opts = {}) {
+      return fetch(base + path, { ...opts, headers: { 'Content-Type': 'application/json', ...opts.headers } }).then(r => { if (!r.ok) throw new Error(r.status + ' ' + r.statusText); return r.json().catch(() => null); });
+    }
+    function show(el, on) { el.classList.toggle('hidden', !on); }
+    function msg(err, ok) { const e = document.getElementById('error'); const s = document.getElementById('success'); e.textContent = err || ''; s.textContent = ok || ''; show(e, !!err); show(s, !!ok); }
+    let playlists = [];
+    let currentId = null;
+
+    function loadPlaylists() {
+      api('').then(data => { playlists = data || []; renderPlaylists(); msg(); }).catch(e => msg(e.message));
+    }
+    function renderPlaylists() {
+      const div = document.getElementById('playlists');
+      div.innerHTML = playlists.map(p => `
+        <div class="playlist-row" data-id="${p.id}">
+          <span class="playlist-name">${escapeHtml(p.name)}</span>
+          <span>
+            <button type="button" data-id="${p.id}" data-action="open">Open</button>
+            <button type="button" class="danger" data-id="${p.id}" data-action="delete">Delete</button>
+          </span>
+        </div>`).join('');
+    }
+    function escapeHtml(s) { const n = document.createElement('div'); n.textContent = s; return n.innerHTML; }
+    function openDetail(id) {
+      currentId = id;
+      const p = playlists.find(x => x.id === id);
+      document.getElementById('detailTitle').textContent = p ? escapeHtml(p.name) : '';
+      show(document.getElementById('list'), false);
+      show(document.getElementById('detail'), true);
+      loadTracks(id);
+    }
+    function loadTracks(id) {
+      api('/' + id + '/tracks/details').then(data => {
+        const ul = document.getElementById('tracks');
+        ul.innerHTML = (data || []).map(t => `
+          <li>
+            <span class="track-info">${escapeHtml(t.artistName)} – ${escapeHtml(t.title)}</span>
+            <button type="button" class="danger" data-track-id="${t.trackId}">Remove</button>
+          </li>`).join('');
+      }).catch(e => msg(e.message));
+    }
+    function back() { show(document.getElementById('detail'), false); show(document.getElementById('list'), true); currentId = null; loadPlaylists(); }
+
+    document.getElementById('btnNew').onclick = () => { show(document.getElementById('modalNew'), true); document.getElementById('newName').value = ''; document.getElementById('newDesc').value = ''; };
+    document.getElementById('btnCancelNew').onclick = () => show(document.getElementById('modalNew'), false);
+    document.getElementById('btnCreate').onclick = () => {
+      const name = document.getElementById('newName').value.trim();
+      if (!name) return msg('Name is required');
+      api('', { method: 'POST', body: JSON.stringify({ name, description: document.getElementById('newDesc').value.trim() || null }) })
+        .then(() => { show(document.getElementById('modalNew'), false); loadPlaylists(); msg(null, 'Playlist created'); })
+        .catch(e => msg(e.message));
+    };
+    document.getElementById('btnImport').onclick = () => { show(document.getElementById('modalImport'), true); document.getElementById('importText').value = ''; document.getElementById('importName').value = 'Imported Playlist'; document.getElementById('importResult').classList.add('hidden'); };
+    document.getElementById('btnCancelImport').onclick = () => show(document.getElementById('modalImport'), false);
+    document.getElementById('btnDoImport').onclick = () => {
+      const text = document.getElementById('importText').value.trim();
+      const name = document.getElementById('importName').value.trim() || 'Imported Playlist';
+      let tracks = [];
+      try {
+        if (text.startsWith('[')) tracks = JSON.parse(text);
+        else tracks = text.split(/\n/).filter(l => l.trim()).map(l => { const m = l.match(/^(.+?)\s*[-–—]\s*(.+)$/); return m ? { artist: m[1].trim(), title: m[2].trim() } : null; }).filter(Boolean);
+      } catch (e) { return msg('Invalid format. Use "Artist - Title" per line or JSON array.'); }
+      if (!tracks.length) return msg('No tracks to import');
+      api('/import', { method: 'POST', body: JSON.stringify({ playlistName: name, tracks }) })
+        .then(res => {
+          document.getElementById('importResult').innerHTML = `<p class="success">Created "${escapeHtml(res.playlist.name)}". Matched ${res.matchedCount}, unmatched ${res.unmatchedCount}.</p>`;
+          document.getElementById('importResult').classList.remove('hidden');
+          loadPlaylists();
+        })
+        .catch(e => msg(e.message));
+    };
+    document.getElementById('btnBack').onclick = back;
+    document.getElementById('btnExportM3u').onclick = () => { if (!currentId) return; window.open(base + '/' + currentId + '/export/m3u', '_blank'); };
+    document.getElementById('btnExportXspf').onclick = () => { if (!currentId) return; window.open(base + '/' + currentId + '/export/xspf', '_blank'); };
+
+    document.getElementById('playlists').addEventListener('click', e => {
+      const id = e.target.dataset.id ? parseInt(e.target.dataset.id, 10) : null;
+      if (id == null) return;
+      if (e.target.dataset.action === 'open') openDetail(id);
+      else if (e.target.dataset.action === 'delete') { if (confirm('Delete this playlist?')) api('/' + id, { method: 'DELETE' }).then(() => loadPlaylists()).catch(err => msg(err.message)); }
+    });
+    document.getElementById('tracks').addEventListener('click', e => {
+      const tid = e.target.dataset.trackId;
+      if (tid && currentId) api('/' + currentId + '/tracks/' + tid, { method: 'DELETE' }).then(() => loadTracks(currentId)).catch(err => msg(err.message));
+    });
+
+    loadPlaylists();
+  </script>
+</body>
+</html>
