@@ -19,3 +19,6 @@ artifacts/
 # Build logs
 *.binlog
 *.log
+
+# Local-only (not for public repo)
+AGENTS.md

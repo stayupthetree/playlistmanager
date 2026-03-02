@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text.RegularExpressions;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Music;
 using NLog;
@@ -7,6 +8,8 @@ namespace PlaylistManager.Services
 {
     public class TrackMatcherService : ITrackMatcherService
     {
+        private static readonly Regex ParentheticalRegex = new Regex(@"\s*[(\[]([^)\]]*)[)\]]\s*", RegexOptions.Compiled);
+        private static readonly Regex CollapseSpace = new Regex(@"\s+", RegexOptions.Compiled);
         private readonly IArtistService _artistService;
         private readonly ITrackService _trackService;
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
@@ -50,9 +53,9 @@ namespace PlaylistManager.Services
                 return exact.Id;
             }
 
-            var cleanTrackTitle = cleanTitle.CleanArtistName();
+            var cleanTrackTitle = CleanTitleForFuzzyMatch(cleanTitle);
             var best = tracks
-                .Select(t => new { Track = t, Score = (t.Title ?? string.Empty).Trim().FuzzyMatch(cleanTrackTitle) })
+                .Select(t => new { Track = t, Score = CleanTitleForFuzzyMatch((t.Title ?? string.Empty).Trim()).FuzzyMatch(cleanTrackTitle) })
                 .OrderByDescending(x => x.Score)
                 .FirstOrDefault();
             if (best != null && best.Score >= TitleFuzzThreshold)
@@ -61,6 +64,21 @@ namespace PlaylistManager.Services
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Normalize track title for fuzzy matching (remove parentheticals, collapse spaces).
+        /// Replaces Lidarr's CleanArtistName which is not in NzbDrone.Common.
+        /// </summary>
+        private static string CleanTitleForFuzzyMatch(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return string.Empty;
+            }
+
+            var cleaned = ParentheticalRegex.Replace(title.Trim(), " ");
+            return CollapseSpace.Replace(cleaned, " ").Trim();
         }
     }
 }
